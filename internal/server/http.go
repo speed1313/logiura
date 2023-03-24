@@ -7,13 +7,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewHTTPServer(addr string) *http.Server{
+func NewHTTPServer(addr string) *http.Server {
 	httpsrv := newHTTPServer()
 	r := mux.NewRouter()
 	r.HandleFunc("/", httpsrv.handleProduce).Methods("POST")
 	r.HandleFunc("/", httpsrv.handleConsume).Methods("GET")
 	return &http.Server{
-		Addr: addr,
+		Addr:    addr,
 		Handler: r,
 	}
 }
@@ -22,7 +22,7 @@ type httpServer struct {
 	Log *Log
 }
 
-func newHTTPServer() *httpServer{
+func newHTTPServer() *httpServer {
 	return &httpServer{
 		Log: NewLog(),
 	}
@@ -44,17 +44,17 @@ type ConsumeResponse struct {
 	Record Record `json:"record"`
 }
 
-func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request){
+func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var req ProduceRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	off, err := s.Log.Append(req.Record)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -62,27 +62,27 @@ func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request){
 		Offset: off,
 	}
 	err = json.NewEncoder(w).Encode(res)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request){
+func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var req ConsumeRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	record, err := s.Log.Read(req.Offset)
-	if err == ErrOffsetNotFound{
+	if err == ErrOffsetNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -90,7 +90,7 @@ func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request){
 		Record: record,
 	}
 	err = json.NewEncoder(w).Encode(res)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
